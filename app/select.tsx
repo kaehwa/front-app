@@ -1,15 +1,8 @@
 // app/index.tsx
 import { useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  Image,
-  Pressable,
-  FlatList,
-  Dimensions,
-  ImageSourcePropType,
-  StyleSheet,
-  ViewStyle,
+  View, Text, Image, Pressable, FlatList, Dimensions,
+  ImageSourcePropType, StyleSheet, ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -19,26 +12,20 @@ type Item = { id: string; title: string; src: ImageSourcePropType };
 const MAX_SELECT = 5;
 
 const CANDIDATES: Item[] = [
-  { id: "1", title: "바스켓 화이트&핑크", src: require("../assets/flowers/1.png") },
-  { id: "2", title: "코랄 부케",        src: require("../assets/flowers/2.png") },
-  { id: "3", title: "파스텔 믹스",       src: require("../assets/flowers/3.png") },
-  { id: "4", title: "옐로우 콘트라스트", src: require("../assets/flowers/4.png") },
-  { id: "5", title: "비비드 믹스",       src: require("../assets/flowers/5.png") },
-  { id: "6", title: "튤립 파스텔",       src: require("../assets/flowers/6.png") },
-  { id: "7", title: "핑크&라일락",       src: require("../assets/flowers/7.png") },
-  { id: "8", title: "화이트 클래식",     src: require("../assets/flowers/8.png") },
+  { id: "1", title: "바스켓 화이트&핑크", src: require("./../assets/flowers/1.png") },
+  { id: "2", title: "코랄 부케",        src: require("./../assets/flowers/2.png") },
+  { id: "3", title: "파스텔 믹스",       src: require("./../assets/flowers/3.png") },
+  { id: "4", title: "옐로우 콘트라스트", src: require("./../assets/flowers/4.png") },
+  { id: "5", title: "비비드 믹스",       src: require("./../assets/flowers/5.png") },
+  { id: "6", title: "튤립 파스텔",       src: require("./../assets/flowers/6.png") },
+  { id: "7", title: "핑크&라일락",       src: require("./../assets/flowers/7.png") },
+  { id: "8", title: "화이트 클래식",     src: require("./../assets/flowers/8.png") },
 ];
 
-/** 예시 버튼(라운드+연회색+그림자) */
+/** 라운드 버튼 */
 function NextButton({
-  disabled,
-  onPress,
-  style,
-}: {
-  disabled?: boolean;
-  onPress: () => void;
-  style?: ViewStyle;
-}) {
+  disabled, onPress, style,
+}: { disabled?: boolean; onPress: () => void; style?: ViewStyle }) {
   return (
     <Pressable
       disabled={!!disabled}
@@ -60,9 +47,12 @@ export default function SelectBouquet() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const canProceed = selected.size === MAX_SELECT;
 
-  // 안전 영역 + 추가 여백으로 상단 내려주기
+  // 로그인/백엔드에서 받은 값이라고 가정 (임시)
+  const USER_NAME = "선아";
+  const ANNIV = "2025-12-25"; // YYYY-MM-DD
+
   const insets = useSafeAreaInsets();
-  const topPad = (insets.top || 0) + 28; // 더 내리고 싶으면 36~48로 키워줘
+  const topPad = (insets.top || 0) + 28;
 
   // 3열 카드 크기
   const screenW = Dimensions.get("window").width;
@@ -89,10 +79,15 @@ export default function SelectBouquet() {
     });
   };
 
+  //main 으로 name, anniv, ids 전달
   const onNext = () => {
     const ids = [...selected].join(",");
-    router.push({ pathname: "/result", params: { ids } });
+    router.push({
+      pathname: "/main",
+      params: { name: USER_NAME, anniv: ANNIV, ids },
+    });
   };
+  
 
   const renderItem = ({ item }: { item: Item }) => {
     const isSelected = selected.has(item.id);
@@ -106,10 +101,8 @@ export default function SelectBouquet() {
       >
         <Image source={item.src} style={styles.cardImage} resizeMode="cover" />
 
-        {/* 이미지 위 어두운 오버레이 */}
         {isSelected && <View style={styles.overlay} pointerEvents="none" />}
 
-        {/* 중앙 연두색 체크 */}
         {isSelected && (
           <View style={styles.checkWrap} pointerEvents="none">
             <Ionicons name="checkmark" size={30} color="#fff" />
@@ -121,14 +114,12 @@ export default function SelectBouquet() {
 
   return (
     <View style={[styles.container, { paddingTop: topPad }]}>
-      {/* 상단 타이포 + 버튼 (중앙 정렬) */}
       <View style={styles.headerWrap}>
         <Text style={styles.title}>{headerText}</Text>
         <Text style={styles.subtitle}>선택한 취향을 바탕으로 맞춤 추천을 보여드릴게요.</Text>
         <NextButton onPress={onNext} disabled={!canProceed} style={{ marginTop: 10 }} />
       </View>
 
-      {/* 세로 스크롤 그리드 */}
       <FlatList
         data={CANDIDATES}
         keyExtractor={(i) => i.id}
