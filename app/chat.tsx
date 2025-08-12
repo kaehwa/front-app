@@ -126,11 +126,11 @@ export default function ChatList() {
   );
 }
 
-const BG = "#111214";
+const BG = "#fff";
 const CARD = "#1A1B1E";
 const MUTED = "#9CA3AF";
 const WHITE = "#F9FAFB";
-const ORANGE = "#FF7A2E";
+const ORANGE = "#9FD49D";
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BG },

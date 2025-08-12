@@ -37,10 +37,10 @@ const SEED_MSG: Message[] = [
   { id: "m5", text: "혹시 10:30은 괜찮으실까요? ㅎㅎ", createdAt: Date.now() - 55 * 60 * 1000, userId: "me" },
 ];
 
-const BG = "#111214";
+const BG = "#fff";
 const CARD = "#1A1B1E";
-const BUBBLE_ME = "#FF7A2E";
-const BUBBLE_OTHER = "#2A2B2F";
+const BUBBLE_ME = "#9FD49D";
+const BUBBLE_OTHER = "#043B0F";
 const TEXT_PRIMARY = "#F9FAFB";
 const TEXT_MUTED = "#9CA3AF";
 
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   inputIcon: { paddingHorizontal: 6, paddingVertical: 6, marginRight: 2 },
   sendBtn: {
     marginLeft: 8,
-    backgroundColor: "#FF7A2E",
+    backgroundColor: "#9FD49D",
     width: 38, height: 38, borderRadius: 19,
     alignItems: "center", justifyContent: "center",
   },
