@@ -1,22 +1,29 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
-  View, Text, Pressable, Image, Animated, Easing, StyleSheet,
-  ActivityIndicator, Alert, Dimensions, Platform,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator, Alert,
+  Animated,
+  Dimensions,
+  Easing,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // ⬇ Google OAuth
-import * as WebBrowser from "expo-web-browser";
-import * as Google from "expo-auth-session/providers/google";
 import { makeRedirectUri } from "expo-auth-session";
-import * as SecureStore from "expo-secure-store";
+import * as Google from "expo-auth-session/providers/google";
 import Constants from "expo-constants";
+import * as SecureStore from "expo-secure-store";
+import * as WebBrowser from "expo-web-browser";
 // ⬆
 
 /** ====== 환경값 ====== */
-const BACKEND_URL = "http://172.31.239.54:8080";
+const BACKEND_URL = "http://192.168.68.108:8080/auth/google";
 
 const IOS_CLIENT_ID =
   "2775008760-83po6j3tmnjor9ttbnc8meg0me21haik.apps.googleusercontent.com";

@@ -10,7 +10,9 @@ import {
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons"; 
+import { useLocalSearchParams, router } from "expo-router";
+
 
 type ChatPreview = {
   id: string;
@@ -64,15 +66,17 @@ function timeAgo(ms: number) {
 }
 
 export default function ChatList() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+
+  // ✅ 상세 화면 분기 (같은 /chat 라우트에서 처리)
+  if (id) return <ChatRoom id={String(id)} />;
+
   const [chats] = useState(SEED);
-  const header = useMemo(
-    () => (
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>채팅</Text>
-      </View>
-    ),
-    []
-  );
+  const header = useMemo(() => (
+    <View style={styles.header}>
+      <Text style={styles.headerTitle}>채팅</Text>
+    </View>
+  ), []);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -83,11 +87,9 @@ export default function ChatList() {
         contentContainerStyle={{ paddingBottom: 16 }}
         ItemSeparatorComponent={() => <View style={styles.sep} />}
         renderItem={({ item }) => (
-          <Link
-            href={{ pathname: "/chat/[id]", params: { id: item.id } }}
-            asChild
-          >
+          <Link href={{ pathname: "/chat", params: { id: item.id } }} asChild>
             <Pressable style={styles.row}>
+
               <Image source={item.avatar} style={styles.avatar} />
               <View style={styles.rowContent}>
                 <View style={styles.rowTop}>
@@ -122,6 +124,25 @@ export default function ChatList() {
           </Link>
         )}
       />
+    </SafeAreaView>
+  );
+}
+
+function ChatRoom({ id }: { id: string }) {
+  return (
+    <SafeAreaView style={styles.safe}>
+      {/* 상단 바 */}
+      <View style={styles.header}>
+        <Pressable onPress={() => router.replace("/chat")}>
+          <Text style={[styles.headerTitle, { fontWeight: "700" }]}>〈</Text>
+        </Pressable>
+        <Text style={[styles.headerTitle, { marginLeft: 12 }]}>채팅방 {id}</Text>
+      </View>
+
+      {/* 내용은 일단 플레이스홀더 */}
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <Text>Chat room: {id}</Text>
+      </View>
     </SafeAreaView>
   );
 }
