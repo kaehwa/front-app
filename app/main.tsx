@@ -8,6 +8,7 @@ import type { Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams, router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import LowBars from './lowBars'
 
 const { width } = Dimensions.get("window");
 
@@ -359,14 +360,7 @@ export default function Main() {
       </ScrollView>
 
       {/* 하단 메뉴바 */}
-      <View style={styles.tabBarShadow}>
-        <View style={styles.tabBar}>
-          <TabItem icon="home"  label="홈"        href={"/main" as Href} active />
-          <TabItem icon="heart" label="찜 리스트" href={"/likes" as Href} />
-          <TabItem icon="chatbubble-ellipses" label="챗팅" href={"/chat" as Href} />
-          <TabItem icon="person" label="마이페이지" href={"/me" as Href} />
-        </View>
-      </View>
+      <LowBars></LowBars>
     </SafeAreaView>
   );
 }
@@ -480,3 +474,5 @@ const styles = StyleSheet.create({
   tabItem: { alignItems: "center", justifyContent: "center", gap: 2 },
   tabLabel: { fontSize: 11, color: "#666" },
 });
+
+
