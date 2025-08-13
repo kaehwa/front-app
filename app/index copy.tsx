@@ -1,28 +1,22 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert,
-  Animated,
-  Dimensions,
-  Easing,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View
+  View, Text, Pressable, Image, Animated, Easing, StyleSheet,
+  ActivityIndicator, Alert, Dimensions, Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 // ⬇ Google OAuth
-import { makeRedirectUri } from "expo-auth-session";
-import * as Google from "expo-auth-session/providers/google";
-import Constants from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+import { makeRedirectUri } from "expo-auth-session";
+import * as SecureStore from "expo-secure-store";
+import Constants from "expo-constants";
 // ⬆
 
 /** ====== 환경값 ====== */
-const BACKEND_URL = "http://4.240.103.29:8080"; // (필요하면 백엔드로도 전송 가능)
+const BACKEND_URL = "http://172.31.239.54:8080";
 
 const IOS_CLIENT_ID =
   "2775008760-83po6j3tmnjor9ttbnc8meg0me21haik.apps.googleusercontent.com";
@@ -30,9 +24,6 @@ const WEB_CLIENT_ID =
   "2775008760-cu5dcieaua1pcl96ilfcg7p8egn4kqsg.apps.googleusercontent.com";
 const ANDROID_CLIENT_ID =
   "2775008760-dj5uto76ve22ja4v68lvslrk3vkl3dbl.apps.googleusercontent.com";
-
-/** 🔐 Firebase REST API용 웹 API 키 (Firebase 콘솔 → 프로젝트 설정 → 웹 API Key) */
-const FIREBASE_API_KEY = "AIzaSyDiECgmcmuSiHxESFLYNKayokU7gK03wfw";
 
 const isExpoGo = Constants.appOwnership === "expo";
 const redirectUri = isExpoGo
@@ -75,7 +66,8 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { width, height } = Dimensions.get("window");
 
-  const topGap = Math.round(height * 0.08);
+  // 화면에 비례한 위치/크기 계산 (웹·모바일 동일한 레이아웃 유지)
+  const topGap = Math.round(height * 0.08); // 상단 여백(화면 높이의 8%)
   const paddingTop = (insets.top || 0) + topGap;
 
   const ringSize   = clamp(Math.round(Math.min(width, height) * 0.42), 180, 260);
@@ -113,86 +105,47 @@ export default function LoginScreen() {
     iosClientId: IOS_CLIENT_ID,
     androidClientId: ANDROID_CLIENT_ID || undefined,
     redirectUri,
-    scopes: ["openid","email", "profile"],
-    responseType: "id_token" //"id_token", // id_token을 받아서 Firebase에 전달
+    scopes: ["openid","profile","email"],
+    responseType: "id_token",
   });
 
-  /** ====== Auth 결과 핸들링 (여기서 Firebase REST API로 보냄) ====== */
+  /** ====== Auth 결과 핸들링 ====== */
   useEffect(() => {
-  (async () => {
-    if (!response) return;
+    (async () => {
+      if (response?.type !== "success") return;
 
-    // response에서 type과 id_token을 꺼냄
-    const type = response.type;
-    const id_token = response.params?.id_token;
-
-    console.log("response.type:", type);
-    console.log("response.params.id_token:", id_token);
-
-    if (type !== "success") {
-      alert("로그인 성공 id_token을 받지 못했습니다.");
-      return;
-    }
-
-    if (!id_token) {
-      alert("로그인 실패 id_token을 받지 못했습니다.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      console.log("Phase")
-
-      const firebaseUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${FIREBASE_API_KEY}`;
-
-      const payload = {
-        postBody: `id_token=${id_token}&providerId=google.com`,
-        requestUri: redirectUri || "http://localhost",
-        returnIdpCredential: true,
-        returnSecureToken: true,
-      };
-
-      const res = await fetch(firebaseUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      console.log(data)
-      if (!res.ok) {
-        const errMsg = data?.error?.message ?? JSON.stringify(data);
-        throw new Error(`Firebase 로그인 실패: ${errMsg}`);
+      const idToken = response.authentication?.idToken;
+      if (!idToken) {
+        Alert.alert("로그인 실패", "id_token을 받지 못했습니다.");
+        return;
       }
 
-      const firebaseIdToken = data.idToken;
-      const firebaseRefreshToken = data.refreshToken;
-      const displayName = data.displayName ?? data.email ?? "Unknown";
-      console.log(firebaseIdToken)
-      console.log(firebaseRefreshToken)
-      console.log(displayName)
-
-      const res_auth = await fetch(`${BACKEND_URL}/auth/google`, {
+      try {
+        setLoading(true);
+        const res = await fetch(`${BACKEND_URL}/auth/google`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id_token: firebaseIdToken }),
-      });
-      console.log(res_auth)
+          body: JSON.stringify({ id_token: idToken }),
+        });
 
-      // if (firebaseIdToken) await SecureStore.setItemAsync("firebaseIdToken", firebaseIdToken);
-      // if (firebaseRefreshToken) await SecureStore.setItemAsync("firebaseRefreshToken", firebaseRefreshToken);
-      // await SecureStore.setItemAsync("userName", displayName);
+        if (!res.ok) {
+          const msg = await res.text();
+          throw new Error(msg || "서버 응답 오류");
+        }
 
-      router.replace("/select");
-    } catch (e: any) {
-      console.log("로그인 실패", e?.message ?? "알 수 없는 오류")
-      Alert.alert("로그인 실패", e?.message ?? "알 수 없는 오류");
-    } finally {
-      setLoading(false);
-    }
-  })();
-}, [response]);
+        const { accessToken, refreshToken, user } = await res.json();
+        if (accessToken)  await SecureStore.setItemAsync("accessToken", accessToken);
+        if (refreshToken) await SecureStore.setItemAsync("refreshToken", refreshToken);
+        await SecureStore.setItemAsync("userName", user?.name ?? "000");
 
+        router.replace("/select");
+      } catch (e: any) {
+        Alert.alert("로그인 실패", e?.message ?? "알 수 없는 오류");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [response]);
 
   const onGooglePress = () => {
     if (!request) return;
@@ -201,8 +154,10 @@ export default function LoginScreen() {
 
   return (
     <View style={[styles.container, { paddingTop, paddingBottom: (insets.bottom || 0) + 28 }]}>
+      {/* 상단 초록 선(항상 최상단에 보이도록) */}
       <View style={styles.topLine} />
 
+      {/* 카피 */}
       <Animated.Text
         style={[
           styles.subtitle,
@@ -212,7 +167,9 @@ export default function LoginScreen() {
         특별한 사람에게 전하는 당신의 이야기,
       </Animated.Text>
 
+      {/* 로고/아이콘 영역 */}
       <View style={[styles.hero, { height: heroHeight }]}>
+        {/* 배경 링(뒤) */}
         <Animated.Image
           source={require("../assets/images/flower-ring.png")}
           style={[
@@ -221,12 +178,14 @@ export default function LoginScreen() {
           ]}
           resizeMode="contain"
         />
+        {/* 앞쪽 텍스트(한자 + ‘개\n화’ 세로) */}
         <Animated.View style={{ opacity: titleOpacity, transform: [{ translateY: titleY }] }}>
           <Text
             style={{
               ...styles.hanja,
               fontSize: hanjaSize,
               lineHeight: hanjaSize + 6,
+              // @ts-ignore - Android baseline 보정
               includeFontPadding: Platform.OS === "android" ? false : undefined,
             }}
           >
@@ -239,6 +198,7 @@ export default function LoginScreen() {
               lineHeight: hangulSize + 2,
               right: -hangulRight,
               top: hangulTop,
+              // @ts-ignore
               includeFontPadding: Platform.OS === "android" ? false : undefined,
             }}
           >{`개\n화`}</Text>
@@ -272,8 +232,10 @@ const styles = StyleSheet.create({
     marginTop: 8, marginBottom: 24,
   },
   ring: { position: "absolute" },
+
+  // ▼ HY견명조 사용(없으면 LGSmartUI로 fallback)
   hanja: {
-    fontFamily: "HYMyeongJo-Bold",
+    fontFamily: "HYMyeongJo-Bold", // ← _layout에서 로드되어 있어야 함
     color: "#0F2A3B",
     textAlign: "center",
   },
